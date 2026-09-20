@@ -171,7 +171,7 @@
   async function init(){
     renderControls(); loadFavorites();
     try{
-      [state.names,state.surnames]=await Promise.all([loadJSON("data/names.json?v=11"),loadGzipJSON("data/surnames.json.gz")]);
+      [state.names,state.surnames]=await Promise.all([loadJSON("data/names.json?v=12"),loadJSON("data/surnames.json?v=12")]);
       $("#generateButton").disabled=false;
     }catch(err){ console.error(err); toast("이름 데이터를 불러오지 못했어요."); }
   }
