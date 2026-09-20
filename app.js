@@ -8,7 +8,7 @@
   const EAST_ASIAN = new Set(["Japanese","Korean","Chinese"]);
   const FANTASY_SURNAME_GROUPS = ["Germanic","French","Italian","Anglophone","Slavic-Russian"];
 
-  const state = { culture:"Japanese", gender:"all", vibes:[], includeSurname:true, count:10, names:[], surnames:[], current:[], favorites:[] };
+  const state = { culture:"Japanese", gender:"all", vibes:[], includeSurname:true, count:1, names:[], surnames:[], current:[], favorites:[] };
   const $ = s => document.querySelector(s);
   const cultureOptions = $("#cultureOptions"), genderOptions=$("#genderOptions"), vibeOptions=$("#vibeOptions");
   const resultsSection=$("#resultsSection"), resultsGrid=$("#resultsGrid"), fallbackNotice=$("#fallbackNotice");
@@ -31,7 +31,6 @@
     vibeOptions.innerHTML=VIBES.map(v=>`<button type="button" class="chip ${state.vibes.includes(v)?'active':''}" data-vibe="${v}">${v}</button>`).join("");
     $("#vibeCounter").textContent=state.vibes.length;
     $("#surnameToggle").checked=state.includeSurname;
-    $("#resultCount").value=String(state.count);
   }
 
   function genderMatches(g){
@@ -118,9 +117,8 @@
   genderOptions.addEventListener("click",e=>{const b=e.target.closest("[data-gender]");if(!b)return;state.gender=b.dataset.gender;renderControls();});
   vibeOptions.addEventListener("click",e=>{const b=e.target.closest("[data-vibe]");if(!b)return;const v=b.dataset.vibe,idx=state.vibes.indexOf(v);if(idx>=0)state.vibes.splice(idx,1);else if(state.vibes.length<2)state.vibes.push(v);else return toast("바이브는 최대 2개까지 고를 수 있어요.");renderControls();});
   $("#surnameToggle").addEventListener("change",e=>state.includeSurname=e.target.checked);
-  $("#resultCount").addEventListener("change",e=>state.count=Number(e.target.value));
   $("#generateButton").addEventListener("click",generate); $("#rerollButton").addEventListener("click",generate);
-  $("#resetButton").addEventListener("click",()=>{state.culture="Japanese";state.gender="all";state.vibes=[];state.includeSurname=true;state.count=10;renderControls();toast("선택을 초기화했어요.");});
+  $("#resetButton").addEventListener("click",()=>{state.culture="Japanese";state.gender="all";state.vibes=[];state.includeSurname=true;state.count=1;renderControls();toast("선택을 초기화했어요.");});
   resultsGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.current);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);if(btn.dataset.action==="reroll-one")rerollOne(card);});
   favoritesGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.favorites);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);});
   $("#favoritesButton").addEventListener("click",()=>{renderFavorites();favoritesSection.hidden=false;resultsSection.hidden=true;favoritesSection.scrollIntoView({behavior:"smooth"});});
