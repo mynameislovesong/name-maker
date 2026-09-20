@@ -17,6 +17,11 @@
 
   function toast(message){ const el=$("#toast"); el.textContent=message; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),1600); }
   function escapeHTML(v=""){ return String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
+  async function loadJSON(url){
+    const response=await fetch(url);
+    if(!response.ok) throw new Error(`데이터 요청 실패: ${response.status}`);
+    return response.json();
+  }
   async function loadGzipJSON(url){
     if (!("DecompressionStream" in window)) throw new Error("이 브라우저는 데이터 압축 해제를 지원하지 않습니다.");
     const response=await fetch(url);
@@ -41,15 +46,11 @@
     if(state.gender==="f") return val.includes("f");
     return true;
   }
-  function hasDisplayableNative(n){
-    if(state.culture!=="Japanese") return true;
-    return Array.isArray(n.native?.forms) && n.native.forms.length>0;
-  }
   function exactPool(){
-    return state.names.filter(n => n.groups?.includes(state.culture) && hasDisplayableNative(n) && genderMatches(n.gender) && state.vibes.every(v=>n.vibes?.includes(v)));
+    return state.names.filter(n => n.groups?.includes(state.culture) && genderMatches(n.gender) && state.vibes.every(v=>n.vibes?.includes(v)));
   }
   function relaxedPool(){
-    return state.names.filter(n => n.groups?.includes(state.culture) && hasDisplayableNative(n) && genderMatches(n.gender) && (!state.vibes.length || state.vibes.some(v=>n.vibes?.includes(v))));
+    return state.names.filter(n => n.groups?.includes(state.culture) && genderMatches(n.gender) && (!state.vibes.length || state.vibes.some(v=>n.vibes?.includes(v))));
   }
   function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
   function surnamePool(){
@@ -59,26 +60,51 @@
   }
   function pickSurname(pool){ return pool.length ? pool[Math.floor(Math.random()*pool.length)] : null; }
   function makeKey(item){ return [item.given?.name,item.surname?.surname,item.culture].filter(Boolean).join("|"); }
-  function nativeInfo(native,culture){
-    if(!native) return {reading:"",forms:[]};
-    if(typeof native==="string") return {reading:"",forms:[native]};
-    if(culture==="Japanese") return {reading:native.kana || "",forms:Array.isArray(native.forms)?native.forms.filter(Boolean):[]};
-    if(culture==="Chinese") return {reading:native.pinyin || "",forms:Array.isArray(native.hanzi)?native.hanzi.filter(Boolean):[]};
-    if(culture==="Korean") return {reading:"",forms:[native.korean || native.hangul || ""].filter(Boolean)};
+  const SLAVIC_NATIVE_PRIORITY=["Russian","Ukrainian","Belarusian","Bulgarian","Macedonian","Serbian"];
+  function normalizeNativeValue(value,culture){
+    if(!value) return {reading:"",forms:[]};
+    if(typeof value==="string") return {reading:"",forms:[value]};
+    if(culture==="Japanese") return {reading:value.kana||"",forms:Array.isArray(value.forms)?value.forms.filter(Boolean):[]};
+    if(culture==="Chinese") return {reading:value.pinyin||"",forms:Array.isArray(value.hanzi)?value.hanzi.filter(Boolean):[]};
+    if(culture==="Korean") return {reading:"",forms:[value.hangul||value.korean||""].filter(Boolean)};
     return {
-      reading:native.kana || native.pinyin || "",
+      reading:value.kana||value.pinyin||"",
       forms:[
-        ...(Array.isArray(native.forms)?native.forms:[]),
-        ...(Array.isArray(native.hanzi)?native.hanzi:[]),
-        native.korean || ""
+        ...(Array.isArray(value.forms)?value.forms:[]),
+        ...(Array.isArray(value.hanzi)?value.hanzi:[]),
+        value.hangul||value.korean||""
       ].filter(Boolean)
     };
+  }
+  function nativeInfo(record,culture){
+    if(!record) return {reading:"",forms:[]};
+    const by=record.native_by_region||{};
+    if(culture==="Japanese" && by.Japanese) return normalizeNativeValue(by.Japanese,"Japanese");
+    if(culture==="Chinese" && by.Chinese) return normalizeNativeValue(by.Chinese,"Chinese");
+    // Korean native is already shown in the Hangul display line, so avoid duplicating it.
+    if(culture==="Korean") return {reading:"",forms:[]};
+    if(culture==="Slavic-Russian"){
+      const forms=[];
+      for(const region of SLAVIC_NATIVE_PRIORITY){
+        if(!record.regions?.includes(region) || !by[region]) continue;
+        for(const form of normalizeNativeValue(by[region],region).forms){
+          if(form && !forms.includes(form)) forms.push(form);
+        }
+      }
+      if(forms.length) return {reading:"",forms};
+    }
+    return normalizeNativeValue(record.native,culture);
+  }
+  function displayHangul(record,culture){
+    return record?.hangul_by_region?.[culture] || record?.hangul || record?.name || "";
   }
   function compose(given,surname,culture){
     const east=EAST_ASIAN.has(culture);
     const roman=surname ? (east ? `${surname.surname} ${given.name}` : `${given.name} ${surname.surname}`) : given.name;
-    const hangul=surname ? (east ? `${surname.hangul || surname.surname} ${given.hangul || given.name}` : `${given.hangul || given.name} ${surname.hangul || surname.surname}`) : (given.hangul || given.name);
-    const gn=nativeInfo(given.native,culture), sn=nativeInfo(surname?.native,culture);
+    const givenHangul=displayHangul(given,culture);
+    const surnameHangul=surname?.hangul || surname?.surname || "";
+    const hangul=surname ? (east ? `${surnameHangul} ${givenHangul}` : `${givenHangul} ${surnameHangul}`) : givenHangul;
+    const gn=nativeInfo(given,culture), sn=nativeInfo(surname,culture);
     let nativeForms=gn.forms;
     if(surname && east && sn.forms.length && gn.forms.length){
       const surnameForm=sn.forms[0];
@@ -86,6 +112,7 @@
     }else if(surname && !east && sn.forms.length && gn.forms.length){
       nativeForms=gn.forms.map(form=>`${form} ${sn.forms[0]}`);
     }
+    nativeForms=[...new Set(nativeForms.filter(Boolean))];
     const nativeReading=gn.reading;
     const native=nativeForms[0] || nativeReading || "";
     return {given,surname,culture,roman,hangul,native,nativeReading,nativeForms};
@@ -144,7 +171,7 @@
   async function init(){
     renderControls(); loadFavorites();
     try{
-      [state.names,state.surnames]=await Promise.all([loadGzipJSON("data/names.json.gz"),loadGzipJSON("data/surnames.json.gz")]);
+      [state.names,state.surnames]=await Promise.all([loadJSON("data/names.json?v=11"),loadGzipJSON("data/surnames.json.gz")]);
       $("#generateButton").disabled=false;
     }catch(err){ console.error(err); toast("이름 데이터를 불러오지 못했어요."); }
   }
