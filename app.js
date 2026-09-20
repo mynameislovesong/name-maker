@@ -41,11 +41,15 @@
     if(state.gender==="f") return val.includes("f");
     return true;
   }
+  function hasDisplayableNative(n){
+    if(state.culture!=="Japanese") return true;
+    return Array.isArray(n.native?.forms) && n.native.forms.length>0;
+  }
   function exactPool(){
-    return state.names.filter(n => n.groups?.includes(state.culture) && genderMatches(n.gender) && state.vibes.every(v=>n.vibes?.includes(v)));
+    return state.names.filter(n => n.groups?.includes(state.culture) && hasDisplayableNative(n) && genderMatches(n.gender) && state.vibes.every(v=>n.vibes?.includes(v)));
   }
   function relaxedPool(){
-    return state.names.filter(n => n.groups?.includes(state.culture) && genderMatches(n.gender) && (!state.vibes.length || state.vibes.some(v=>n.vibes?.includes(v))));
+    return state.names.filter(n => n.groups?.includes(state.culture) && hasDisplayableNative(n) && genderMatches(n.gender) && (!state.vibes.length || state.vibes.some(v=>n.vibes?.includes(v))));
   }
   function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
   function surnamePool(){

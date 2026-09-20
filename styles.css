@@ -20,3 +20,53 @@
   .native-forms span{font-size:16px}
   .results-section .card-actions{right:16px;bottom:16px}
 }
+
+/* v9: prominent single recommendation */
+.results-section .results-grid{display:block;width:100%;max-width:none;margin:0}
+.results-section .name-card{
+  width:100%;
+  min-height:420px;
+  padding:46px 56px 52px;
+  border-radius:34px;
+}
+.results-section .name-main{
+  min-height:250px;
+  margin-top:42px;
+  padding:0 48px 62px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.results-section .roman-name{
+  font-size:clamp(68px,8vw,104px);
+  line-height:.98;
+  letter-spacing:-.045em;
+}
+.results-section .hangul-name{
+  margin-top:18px;
+  font-size:24px;
+}
+.results-section .native-reading{
+  margin-top:14px;
+  font-size:17px;
+}
+.results-section .native-forms{
+  margin-top:18px;
+  gap:10px;
+}
+.results-section .native-forms span{
+  min-height:46px;
+  padding:9px 15px;
+  border-radius:14px;
+  font-size:24px;
+}
+@media(max-width:760px){
+  .results-section .name-card{min-height:350px;padding:28px 20px 38px}
+  .results-section .name-main{min-height:220px;margin-top:30px;padding:0 8px 58px}
+  .results-section .roman-name{font-size:clamp(48px,15vw,70px)}
+  .results-section .hangul-name{font-size:20px}
+  .results-section .native-reading{font-size:15px}
+  .results-section .native-forms span{font-size:19px}
+}
