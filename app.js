@@ -17,13 +17,11 @@
 
   function toast(message){ const el=$("#toast"); el.textContent=message; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),1600); }
   function escapeHTML(v=""){ return String(v).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
-  async function loadChunkedGzipJSON(prefix,count){
+  async function loadGzipJSON(url){
     if (!("DecompressionStream" in window)) throw new Error("이 브라우저는 데이터 압축 해제를 지원하지 않습니다.");
-    const paths=Array.from({length:count},(_,i)=>`data/${prefix}/${String(i+1).padStart(2,"0")}.txt`);
-    const parts=await Promise.all(paths.map(async url=>{const r=await fetch(url);if(!r.ok)throw new Error(`데이터 요청 실패: ${r.status}`);return r.text();}));
-    const base64=parts.join("").replace(/\s+/g,"");
-    const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));
-    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    const response=await fetch(url);
+    if(!response.ok) throw new Error(`데이터 요청 실패: ${response.status}`);
+    const stream=response.body.pipeThrough(new DecompressionStream("gzip"));
     return JSON.parse(await new Response(stream).text());
   }
 
@@ -131,7 +129,7 @@
   async function init(){
     renderControls(); loadFavorites();
     try{
-      [state.names,state.surnames]=await Promise.all([loadChunkedGzipJSON("names",12),loadChunkedGzipJSON("surnames",4)]);
+      [state.names,state.surnames]=await Promise.all([loadGzipJSON("data/names.json.gz"),loadGzipJSON("data/surnames.json.gz")]);
       $("#generateButton").disabled=false;
     }catch(err){ console.error(err); toast("이름 데이터를 불러오지 못했어요."); }
   }
