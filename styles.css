@@ -7,7 +7,9 @@
 .results-section .hangul-name{margin-top:12px;font-size:20px}
 .native-reading{margin:12px 0 0;color:#93899b;font-size:14px}
 .native-forms{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:14px}
-.native-forms span{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 12px;border:1px solid #e9e0ef;border-radius:12px;background:#faf7fc;color:#65586e;font-size:18px;line-height:1.2}
+.native-form{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 12px;border:1px solid #e9e0ef;border-radius:12px;background:#faf7fc;color:#65586e;font:inherit;font-size:18px;line-height:1.2;cursor:pointer;transition:.16s}
+.native-form:hover{background:#f3ebf8;border-color:#d7c7e2;color:#513d60;transform:translateY(-1px)}
+.native-form:active{transform:translateY(0)}
 .results-section .favorite-icon{width:42px;height:42px;border-radius:14px;font-size:21px}
 .results-section .mini-badge{padding:7px 10px;font-size:10px}
 .results-section .card-actions{right:30px;bottom:24px}
@@ -17,7 +19,7 @@
   .results-section .name-main{margin-top:30px;padding:0 8px 48px}
   .results-section .roman-name{font-size:clamp(42px,13vw,62px)}
   .results-section .hangul-name{font-size:18px}
-  .native-forms span{font-size:16px}
+  .native-form{font-size:16px}
   .results-section .card-actions{right:16px;bottom:16px}
 }
 
@@ -56,7 +58,7 @@
   margin-top:18px;
   gap:10px;
 }
-.results-section .native-forms span{
+.results-section .native-form{
   min-height:46px;
   padding:9px 15px;
   border-radius:14px;
@@ -68,5 +70,5 @@
   .results-section .roman-name{font-size:clamp(48px,15vw,70px)}
   .results-section .hangul-name{font-size:20px}
   .results-section .native-reading{font-size:15px}
-  .results-section .native-forms span{font-size:19px}
+  .results-section .native-form{font-size:19px}
 }

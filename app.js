@@ -1,7 +1,7 @@
 (() => {
   const CULTURES = [
     ["Japanese","일본"],["Korean","한국"],["Chinese","중국"],["Anglophone","영미"],
-    ["French","프랑스"],["Germanic","독일권"],["Italian","이탈리아"],["Slavic-Russian","슬라브·러시아"],["Fantasy","판타지"]
+    ["French","프랑스"],["Germanic","독일권"],["Italian","이탈리아"],["Slavic-Russian","슬라브·러시아"],["Fantasy","중세 판타지"]
   ];
   const VIBES = ["청량한","부드러운","귀여운","담백한","따뜻한","차가운","날카로운","우아한","고전적인","세련된","중성적인","신비로운","음침한","퇴폐적인","화려한","강렬한"];
   const GENDERS = [["all","전체"],["m","남성"],["f","여성"],["u","공용"]];
@@ -137,8 +137,8 @@
     const key=makeKey(item), saved=state.favorites.some(f=>makeKey(f)===key);
     return `<article class="name-card" data-key="${escapeHTML(key)}">
       <div class="card-top"><div class="badge-row"><span class="mini-badge">${escapeHTML(cultureLabel(item.culture))}</span><span class="mini-badge">${escapeHTML(genderLabel(item.given.gender))}</span></div><button class="favorite-icon ${saved?'active':''}" data-action="favorite" type="button" aria-label="저장">${saved?'♥':'♡'}</button></div>
-      <div class="name-main"><h3 class="roman-name">${escapeHTML(item.roman)}</h3><p class="hangul-name">${escapeHTML(item.hangul)}</p>${item.nativeReading?`<p class="native-reading">${escapeHTML(item.nativeReading)}</p>`:""}${(item.nativeForms?.length || item.native)?`<div class="native-forms">${(item.nativeForms?.length?item.nativeForms:[item.native]).map(form=>`<span>${escapeHTML(form)}</span>`).join("")}</div>`:""}</div>
-      <div class="card-actions"><button class="icon-button" data-action="copy" type="button">복사</button>${favoriteView?'':`<button class="icon-button" data-action="reroll-one" type="button">다시 뽑기</button>`}</div>
+      <div class="name-main"><h3 class="roman-name">${escapeHTML(item.roman)}</h3><p class="hangul-name">${escapeHTML(item.hangul)}</p>${item.nativeReading?`<p class="native-reading">${escapeHTML(item.nativeReading)}</p>`:""}${(item.nativeForms?.length || item.native)?`<div class="native-forms">${(item.nativeForms?.length?item.nativeForms:[item.native]).map((form,index)=>`<button type="button" class="native-form" data-action="copy-native" data-native-index="${index}" aria-label="${escapeHTML(form)} 복사" title="클릭해서 복사">${escapeHTML(form)}</button>`).join("")}</div>`:""}</div>
+      <div class="card-actions"><button class="icon-button" data-action="copy" type="button">원문 복사</button>${favoriteView?'':`<button class="icon-button" data-action="reroll-one" type="button">다시 뽑기</button>`}</div>
     </article>`;
   }
   function renderResults(){ resultsGrid.innerHTML=state.current.length?state.current.map(i=>cardHTML(i)).join(""):`<p class="empty-state">조건에 맞는 이름이 없어요. 바이브나 성별 조건을 조금 바꿔보세요.</p>`; }
@@ -148,7 +148,21 @@
   function toggleFavorite(item){ const key=makeKey(item),idx=state.favorites.findIndex(f=>makeKey(f)===key); if(idx>=0){state.favorites.splice(idx,1);toast("저장에서 뺐어요.");}else{state.favorites.unshift(item);toast("이름을 저장했어요.");} saveFavorites(); renderResults(); if(!favoritesSection.hidden) renderFavorites(); }
   function renderFavorites(){ favoritesGrid.innerHTML=state.favorites.map(i=>cardHTML(i,true)).join(""); favoritesEmpty.hidden=!!state.favorites.length; }
   function findItemByCard(card, list){ const key=card?.dataset.key; return list.find(i=>makeKey(i)===key); }
-  async function copyItem(item){ const text=[item.roman,item.hangul,item.nativeReading,...(item.nativeForms?.length?item.nativeForms:(item.native?[item.native]:[]))].filter(Boolean).join("\n"); try{await navigator.clipboard.writeText(text);toast("이름을 복사했어요.");}catch{toast("복사하지 못했어요.");} }
+  function originalText(item){
+    const forms=item.nativeForms?.filter(Boolean)||[];
+    if(forms.length) return forms[0];
+    if(item.culture==="Korean") return item.hangul||item.roman||"";
+    return item.native||item.nativeReading||item.roman||"";
+  }
+  async function copyText(text,message="원문을 복사했어요."){
+    if(!text) return toast("복사할 원문이 없어요.");
+    try{await navigator.clipboard.writeText(text);toast(message);}catch{toast("복사하지 못했어요.");}
+  }
+  async function copyItem(item){ return copyText(originalText(item)); }
+  async function copyNativeForm(item,index){
+    const forms=item.nativeForms?.length?item.nativeForms:(item.native?[item.native]:[]);
+    return copyText(forms[index],"선택한 원문을 복사했어요.");
+  }
   function rerollOne(card){
     const old=findItemByCard(card,state.current); if(!old) return;
     let pool=exactPool(); if(!pool.length&&state.vibes.length>1) pool=relaxedPool();
@@ -163,8 +177,8 @@
   $("#surnameToggle").addEventListener("change",e=>state.includeSurname=e.target.checked);
   $("#generateButton").addEventListener("click",generate); $("#rerollButton").addEventListener("click",generate);
   $("#resetButton").addEventListener("click",()=>{state.culture="Japanese";state.gender="all";state.vibes=[];state.includeSurname=true;state.count=1;renderControls();toast("선택을 초기화했어요.");});
-  resultsGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.current);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);if(btn.dataset.action==="reroll-one")rerollOne(card);});
-  favoritesGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.favorites);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);});
+  resultsGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.current);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);if(btn.dataset.action==="copy-native")copyNativeForm(item,Number(btn.dataset.nativeIndex));if(btn.dataset.action==="reroll-one")rerollOne(card);});
+  favoritesGrid.addEventListener("click",e=>{const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".name-card"),item=findItemByCard(card,state.favorites);if(!item)return;if(btn.dataset.action==="favorite")toggleFavorite(item);if(btn.dataset.action==="copy")copyItem(item);if(btn.dataset.action==="copy-native")copyNativeForm(item,Number(btn.dataset.nativeIndex));});
   $("#favoritesButton").addEventListener("click",()=>{renderFavorites();favoritesSection.hidden=false;resultsSection.hidden=true;favoritesSection.scrollIntoView({behavior:"smooth"});});
   $("#closeFavoritesButton").addEventListener("click",()=>{favoritesSection.hidden=true;if(state.current.length)resultsSection.hidden=false;});
 
