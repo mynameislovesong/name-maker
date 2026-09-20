@@ -89,11 +89,9 @@
   function cultureLabel(k){ return CULTURES.find(x=>x[0]===k)?.[1] || k; }
   function cardHTML(item, favoriteView=false){
     const key=makeKey(item), saved=state.favorites.some(f=>makeKey(f)===key);
-    const vibes=item.given.vibes || [];
     return `<article class="name-card" data-key="${escapeHTML(key)}">
       <div class="card-top"><div class="badge-row"><span class="mini-badge">${escapeHTML(cultureLabel(item.culture))}</span><span class="mini-badge">${escapeHTML(genderLabel(item.given.gender))}</span></div><button class="favorite-icon ${saved?'active':''}" data-action="favorite" type="button" aria-label="저장">${saved?'♥':'♡'}</button></div>
       <div class="name-main"><h3 class="roman-name">${escapeHTML(item.roman)}</h3><p class="hangul-name">${escapeHTML(item.hangul)}</p>${item.native?`<p class="native-name">${escapeHTML(item.native)}</p>`:""}</div>
-      <div class="vibe-row">${vibes.map(v=>`<span class="vibe-tag">${escapeHTML(v)}</span>`).join("")}</div>
       <div class="card-actions"><button class="icon-button" data-action="copy" type="button">복사</button>${favoriteView?'':`<button class="icon-button" data-action="reroll-one" type="button">다시 뽑기</button>`}</div>
     </article>`;
   }
