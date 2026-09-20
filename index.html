@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f3ff" />
+  <meta name="description" content="문화권, 성별, 분위기로 캐릭터 이름을 추천하는 이름 생성기" />
+  <title>Name Maker — 캐릭터 이름 생성기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Name Maker 홈">
+        <span class="brand-mark">N</span>
+        <span><b>Name Maker</b><small>CHARACTER NAMING ATELIER</small></span>
+      </a>
+      <button class="ghost-button" id="favoritesButton" type="button">♡ 저장한 이름 <span id="favoriteCount">0</span></button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">NO API · CURATED NAME DATASET</p>
+        <h1>캐릭터에게 어울리는<br><em>이름의 분위기</em>를 골라보세요.</h1>
+        <p class="hero-copy">문화권과 이름의 인상을 조합해 실제 이름 데이터에서 랜덤으로 추천합니다.</p>
+      </section>
+
+      <section class="generator-card" aria-labelledby="generatorTitle">
+        <div class="section-heading">
+          <div><span>01</span><h2 id="generatorTitle">문화권</h2></div>
+          <p>하나를 선택하세요</p>
+        </div>
+        <div class="chip-grid culture-grid" id="cultureOptions"></div>
+
+        <div class="divider"></div>
+        <div class="filter-row two-col">
+          <div>
+            <div class="section-heading compact"><div><span>02</span><h2>성별</h2></div></div>
+            <div class="segmented" id="genderOptions"></div>
+          </div>
+          <div>
+            <div class="section-heading compact"><div><span>03</span><h2>성씨</h2></div></div>
+            <label class="switch-row">
+              <span><b>풀네임으로 추천</b><small>같은 문화권의 성씨를 조합합니다</small></span>
+              <input id="surnameToggle" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-heading">
+          <div><span>04</span><h2>바이브</h2></div>
+          <p><b id="vibeCounter">0</b>/2 선택 · 선택하지 않아도 돼요</p>
+        </div>
+        <div class="chip-grid vibe-grid" id="vibeOptions"></div>
+
+        <div class="generator-footer">
+          <button class="text-button" id="resetButton" type="button">선택 초기화</button>
+          <div class="result-count-wrap">
+            <label for="resultCount">추천 수</label>
+            <select id="resultCount">
+              <option value="5">5개</option>
+              <option value="10" selected>10개</option>
+              <option value="20">20개</option>
+            </select>
+          </div>
+          <button class="primary-button" id="generateButton" type="button"><span>이름 추천받기</span><b>→</b></button>
+        </div>
+      </section>
+
+      <section class="results-section" id="resultsSection" hidden>
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">RESULTS</p>
+            <h2 id="resultsTitle">추천 이름</h2>
+          </div>
+          <div class="results-meta"><span id="poolCount"></span><button class="ghost-button small" id="rerollButton" type="button">↻ 다시 뽑기</button></div>
+        </div>
+        <div class="notice" id="fallbackNotice" hidden></div>
+        <div class="results-grid" id="resultsGrid"></div>
+      </section>
+
+      <section class="favorites-section" id="favoritesSection" hidden>
+        <div class="results-head">
+          <div><p class="eyebrow">SAVED</p><h2>저장한 이름</h2></div>
+          <button class="ghost-button small" id="closeFavoritesButton" type="button">닫기</button>
+        </div>
+        <div class="results-grid" id="favoritesGrid"></div>
+        <p class="empty-state" id="favoritesEmpty">아직 저장한 이름이 없어요.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p>이름·성씨 원자료: <a href="https://www.behindthename.com/" target="_blank" rel="noreferrer">Behind the Name</a> · CC BY-SA 4.0</p>
+      <p>문화권 분류·한글 표기·바이브 태깅은 캐릭터 작명을 위한 가공 데이터입니다.</p>
+    </footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
