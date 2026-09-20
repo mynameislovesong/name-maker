@@ -55,21 +55,36 @@
   }
   function pickSurname(pool){ return pool.length ? pool[Math.floor(Math.random()*pool.length)] : null; }
   function makeKey(item){ return [item.given?.name,item.surname?.surname,item.culture].filter(Boolean).join("|"); }
-  function nativePrimary(native,culture){
-    if(!native) return "";
-    if(typeof native==="string") return native;
-    if(culture==="Korean") return native.korean || "";
-    if(culture==="Chinese") return native.hanzi?.[0] || "";
-    if(culture==="Japanese") return native.forms?.[0] || native.kana || "";
-    return native.forms?.[0] || native.hanzi?.[0] || native.korean || native.kana || "";
+  function nativeInfo(native,culture){
+    if(!native) return {reading:"",forms:[]};
+    if(typeof native==="string") return {reading:"",forms:[native]};
+    if(culture==="Japanese") return {reading:native.kana || "",forms:Array.isArray(native.forms)?native.forms.filter(Boolean):[]};
+    if(culture==="Chinese") return {reading:native.pinyin || "",forms:Array.isArray(native.hanzi)?native.hanzi.filter(Boolean):[]};
+    if(culture==="Korean") return {reading:"",forms:[native.korean || native.hangul || ""].filter(Boolean)};
+    return {
+      reading:native.kana || native.pinyin || "",
+      forms:[
+        ...(Array.isArray(native.forms)?native.forms:[]),
+        ...(Array.isArray(native.hanzi)?native.hanzi:[]),
+        native.korean || ""
+      ].filter(Boolean)
+    };
   }
   function compose(given,surname,culture){
     const east=EAST_ASIAN.has(culture);
     const roman=surname ? (east ? `${surname.surname} ${given.name}` : `${given.name} ${surname.surname}`) : given.name;
     const hangul=surname ? (east ? `${surname.hangul || surname.surname} ${given.hangul || given.name}` : `${given.hangul || given.name} ${surname.hangul || surname.surname}`) : (given.hangul || given.name);
-    const gn=nativePrimary(given.native,culture), sn=nativePrimary(surname?.native,culture);
-    const native=surname && gn && sn ? (east ? `${sn}${gn}` : `${gn} ${sn}`) : (gn || "");
-    return {given,surname,culture,roman,hangul,native};
+    const gn=nativeInfo(given.native,culture), sn=nativeInfo(surname?.native,culture);
+    let nativeForms=gn.forms;
+    if(surname && east && sn.forms.length && gn.forms.length){
+      const surnameForm=sn.forms[0];
+      nativeForms=gn.forms.map(form=>`${surnameForm}${form}`);
+    }else if(surname && !east && sn.forms.length && gn.forms.length){
+      nativeForms=gn.forms.map(form=>`${form} ${sn.forms[0]}`);
+    }
+    const nativeReading=gn.reading;
+    const native=nativeForms[0] || nativeReading || "";
+    return {given,surname,culture,roman,hangul,native,nativeReading,nativeForms};
   }
 
   function generate(){
@@ -91,7 +106,7 @@
     const key=makeKey(item), saved=state.favorites.some(f=>makeKey(f)===key);
     return `<article class="name-card" data-key="${escapeHTML(key)}">
       <div class="card-top"><div class="badge-row"><span class="mini-badge">${escapeHTML(cultureLabel(item.culture))}</span><span class="mini-badge">${escapeHTML(genderLabel(item.given.gender))}</span></div><button class="favorite-icon ${saved?'active':''}" data-action="favorite" type="button" aria-label="저장">${saved?'♥':'♡'}</button></div>
-      <div class="name-main"><h3 class="roman-name">${escapeHTML(item.roman)}</h3><p class="hangul-name">${escapeHTML(item.hangul)}</p>${item.native?`<p class="native-name">${escapeHTML(item.native)}</p>`:""}</div>
+      <div class="name-main"><h3 class="roman-name">${escapeHTML(item.roman)}</h3><p class="hangul-name">${escapeHTML(item.hangul)}</p>${item.nativeReading?`<p class="native-reading">${escapeHTML(item.nativeReading)}</p>`:""}${(item.nativeForms?.length || item.native)?`<div class="native-forms">${(item.nativeForms?.length?item.nativeForms:[item.native]).map(form=>`<span>${escapeHTML(form)}</span>`).join("")}</div>`:""}</div>
       <div class="card-actions"><button class="icon-button" data-action="copy" type="button">복사</button>${favoriteView?'':`<button class="icon-button" data-action="reroll-one" type="button">다시 뽑기</button>`}</div>
     </article>`;
   }
@@ -102,7 +117,7 @@
   function toggleFavorite(item){ const key=makeKey(item),idx=state.favorites.findIndex(f=>makeKey(f)===key); if(idx>=0){state.favorites.splice(idx,1);toast("저장에서 뺐어요.");}else{state.favorites.unshift(item);toast("이름을 저장했어요.");} saveFavorites(); renderResults(); if(!favoritesSection.hidden) renderFavorites(); }
   function renderFavorites(){ favoritesGrid.innerHTML=state.favorites.map(i=>cardHTML(i,true)).join(""); favoritesEmpty.hidden=!!state.favorites.length; }
   function findItemByCard(card, list){ const key=card?.dataset.key; return list.find(i=>makeKey(i)===key); }
-  async function copyItem(item){ const text=[item.roman,item.hangul,item.native].filter(Boolean).join("\n"); try{await navigator.clipboard.writeText(text);toast("이름을 복사했어요.");}catch{toast("복사하지 못했어요.");} }
+  async function copyItem(item){ const text=[item.roman,item.hangul,item.nativeReading,...(item.nativeForms?.length?item.nativeForms:(item.native?[item.native]:[]))].filter(Boolean).join("\n"); try{await navigator.clipboard.writeText(text);toast("이름을 복사했어요.");}catch{toast("복사하지 못했어요.");} }
   function rerollOne(card){
     const old=findItemByCard(card,state.current); if(!old) return;
     let pool=exactPool(); if(!pool.length&&state.vibes.length>1) pool=relaxedPool();
